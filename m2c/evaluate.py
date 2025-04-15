@@ -555,6 +555,23 @@ def handle_swr(args: InstrArgs) -> Optional[StoreStmt]:
     return StoreStmt(source=expr, dest=dest)
 
 
+def handle_sdl(args: InstrArgs) -> Optional[StoreStmt]:
+    # sdl in practice only occurs together with sdr, so we can treat it as a regular
+    # store, with the expression wrapped in UnalignedLoad64 if needed.
+    source = args.reg(0)
+    target = args.memory_ref(1)
+    if not isinstance(early_unwrap(source), UnalignedLoad64):
+        source = UnalignedLoad64(source)
+    if not args.stack_info.global_info.target.is_big_endian():
+        target = replace(target, offset=target.offset - 7)
+    dest = deref_unaligned(target, args.regs, args.stack_info, store=True)
+    return StoreStmt(source=source, dest=dest)
+
+
+def handle_sdr(args: InstrArgs) -> Optional[StoreStmt]:
+    return None
+
+
 def handle_sra(args: InstrArgs) -> Expression:
     lhs = args.reg(1)
     shift = args.imm(2)

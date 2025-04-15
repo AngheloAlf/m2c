@@ -94,6 +94,8 @@ from .evaluate import (
     handle_sra,
     handle_swl,
     handle_swr,
+    handle_sdl,
+    handle_sdr,
     imm_add_32,
     load_upper,
     make_store,
@@ -1326,6 +1328,8 @@ class MipsArch(Arch):
         # Unaligned stores
         "swl": lambda a: handle_swl(a),
         "swr": lambda a: handle_swr(a),
+        "sdl": lambda a: handle_sdl(a),
+        "sdr": lambda a: handle_sdr(a),
         # Floating point storage/conversion
         "swc1": lambda a: make_store(a, type=Type.reg32(likely_float=True)),
         "sdc1": lambda a: make_store(a, type=Type.reg64(likely_float=True)),
