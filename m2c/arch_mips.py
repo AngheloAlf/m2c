@@ -86,6 +86,8 @@ from .evaluate import (
     handle_load,
     handle_lwl,
     handle_lwr,
+    handle_ldl,
+    handle_ldr,
     handle_or,
     handle_sltiu,
     handle_sltu,
@@ -1171,7 +1173,7 @@ class MipsArch(Arch):
                 inputs = make_memory_access(args[1])
                 if isinstance(args[1], AsmAddressMode):
                     inputs.append(args[1].base)
-                if mnemonic == "lwr":
+                if mnemonic in {"lwr", "ldr"}:
                     # lwl, lwr sometimes read from their destination registers,
                     # though we treat lwl as not doing so -- see handle_lwl.
                     inputs.append(args[0])
@@ -1663,6 +1665,8 @@ class MipsArch(Arch):
         # Unaligned loads
         "lwl": lambda a: handle_lwl(a),
         "lwr": lambda a: handle_lwr(a),
+        "ldl": lambda a: handle_ldl(a),
+        "ldr": lambda a: handle_ldr(a),
         # Sign extend
         "seb": lambda a: as_type(a.reg(1), Type.s8(), silent=False),
         "seh": lambda a: as_type(a.reg(1), Type.s16(), silent=False),

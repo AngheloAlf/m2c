@@ -26,6 +26,7 @@ typedef s64 M2C_UNK64;
 #define M2C_LWL(expr) (expr)
 #define M2C_FIRST3BYTES(expr) (expr)
 #define M2C_UNALIGNED32(expr) (expr)
+#define M2C_UNALIGNED64(expr) (expr)
 
 /* Unhandled instructions */
 #define M2C_ERROR(desc) (0)

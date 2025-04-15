@@ -1700,6 +1700,19 @@ class Lwl(Expression):
 
 
 @dataclass(frozen=True)
+class Ldl(Expression):
+    load_expr: Expression
+    key: Tuple[int, object]
+    type: Type = field(compare=False, default_factory=Type.any_reg)
+
+    def dependencies(self) -> List[Expression]:
+        return [self.load_expr]
+
+    def format(self, fmt: Formatter) -> str:
+        return f"M2C_LDL({self.load_expr.format(fmt)})"
+
+
+@dataclass(frozen=True)
 class Load3Bytes(Expression):
     load_expr: Expression
     type: Type = field(compare=False, default_factory=Type.any_reg)
@@ -1725,6 +1738,20 @@ class UnalignedLoad(Expression):
         if fmt.valid_syntax:
             return f"M2C_UNALIGNED32({self.load_expr.format(fmt)})"
         return f"(unaligned s32) {self.load_expr.format(fmt)}"
+
+
+@dataclass(frozen=True)
+class UnalignedLoad64(Expression):
+    load_expr: Expression
+    type: Type = field(compare=False, default_factory=Type.any_reg)
+
+    def dependencies(self) -> List[Expression]:
+        return [self.load_expr]
+
+    def format(self, fmt: Formatter) -> str:
+        if fmt.valid_syntax:
+            return f"M2C_UNALIGNED64({self.load_expr.format(fmt)})"
+        return f"(unaligned s64) {self.load_expr.format(fmt)}"
 
 
 @dataclass(frozen=False, eq=False)

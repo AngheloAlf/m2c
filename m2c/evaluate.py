@@ -34,6 +34,7 @@ from .translate import (
     Load3Bytes,
     LocalVar,
     Lwl,
+    Ldl,
     RawSymbolRef,
     RegInfo,
     StackInfo,
@@ -41,6 +42,7 @@ from .translate import (
     StructAccess,
     TernaryOp,
     UnalignedLoad,
+    UnalignedLoad64,
     UnaryOp,
     as_intish,
     as_intptr,
@@ -454,6 +456,40 @@ def handle_lwr(args: InstrArgs) -> Expression:
         load_expr = deref_unaligned(left_mem_ref, args.regs, args.stack_info)
         return Load3Bytes(load_expr)
     return ErrorExpr("Unable to handle lwr; missing a corresponding lwl")
+
+
+def handle_ldl(args: InstrArgs) -> Expression:
+    # Unaligned doubleword load for the left part of a register.
+    # Works like lwl, but for 64bit values instead of 32bit ones.
+    ref = args.memory_ref(1)
+    expr = deref_unaligned(ref, args.regs, args.stack_info)
+    key: Tuple[int, object]
+    if isinstance(ref, AddressMode):
+        key = (ref.offset, args.regs[ref.base])
+    else:
+        key = (ref.offset, ref.sym)
+    return Ldl(expr, key)
+
+
+def handle_ldr(args: InstrArgs) -> Expression:
+    # Unaligned doubleword load for the right part of a register. This ldr may
+    # merge with an existing ldl, if it loads from the same target but with an
+    # offset that's ±7.
+    uw_old_value = early_unwrap(args.reg(0))
+    ref = args.memory_ref(1)
+    ldl_key: Tuple[int, object]
+    delta = -7 if args.stack_info.global_info.target.is_big_endian() else 7
+    if isinstance(ref, AddressMode):
+        ldl_key = (ref.offset + delta, args.regs[ref.base])
+    else:
+        ldl_key = (ref.offset + delta, ref.sym)
+    if isinstance(uw_old_value, Ldl) and uw_old_value.key[0] == ldl_key[0]:
+        if args.stack_info.global_info.target.is_big_endian():
+            load_expr = uw_old_value.load_expr
+        else:
+            load_expr = deref_unaligned(ref, args.regs, args.stack_info)
+        return UnalignedLoad64(load_expr)
+    return ErrorExpr("Unable to handle ldr; missing a corresponding ldl")
 
 
 def make_store(args: InstrArgs, type: Type) -> Optional[StoreStmt]:
